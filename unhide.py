@@ -1,32 +1,59 @@
 import subprocess,time,os
+import flet as ft
 
-print("             _     _     _       ")
-print(" _   _ _ __ | |__ (_) __| | ___  ")
-print("| | | | '_ \| '_ \| |/ _` |/ _ \ ")
-print("| |_| | | | | | | | | (_| |  __/ ")
-print(" \__,_|_| |_|_| |_|_|\__,_|\___| v0.1.1")
+def main(page: ft.Page):
+    page.title="unHide"
+    page.window_height=400
+    page.window_width=380
+    page.window_resizable=False
+    page.window_maximizable=False
+    #page.vertical_alignment=ft.MainAxisAlignment.CENTER
 
-time.sleep(2)
-os.system('cls')
+    def handleOptions(device_name,dd):
+        for option in dd.options:
+            if device_name == option.key:
+                return option
+        return None
+    
+    # Obtener unidades
+    def getDevices(dd):
+        output=subprocess.run('fsutil fsinfo drives',capture_output=True).stdout.decode('utf-8').split()
+        for device in output[1:]:
+            if handleOptions(device,dd) == None:
+                dd.options.append(ft.dropdown.Option(device))
+        page.update()
 
-while True:
-    disk=input("Especifique la letra de la unidad a escanear.[Ej. D]")
+    select=ft.Dropdown(hint_text="Seleccione la unidad a escanear")
 
-    if len(disk)==1:
-        disk=disk[-1]
-        break
+    getDevices(select)
 
-    if len(disk)==0:
-        break
+    page.add(
+        ft.Container(
+            margin=10,
+            padding=10,
+            alignment=ft.alignment.center
+        ),
+        ft.Container(
+            select,
+            margin=10,
+            padding=10,
+            alignment=ft.alignment.center
+        ),
+        ft.Container(
+            ft.Row([
+                ft.OutlinedButton(
+                    text="Actualizar",
+                    icon=ft.icons.REFRESH_ROUNDED,
+                    on_click=lambda _:getDevices(select)
+                ),
+                ft.OutlinedButton(
+                    text="Escanear",
+                    icon=ft.icons.SEARCH
+                )
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_EVENLY
+            )
+        ),
+    )
 
-print(f"Escaneando unidad {disk.upper()}:\ ")
-print('Este proceso puede demorar unos minutos...')
-pr=subprocess.Popen(["ATTRIB", "/d", "/s", "-r", "-h", "-s", f"{disk}:*"],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-pr.communicate()
-
-if pr.returncode==0:
-    print("Proceso finalizado.")
-else:
-    print("Ha ocurrido un error.")
-
-os.system("PAUSE")
+ft.app(main,name='MyAPP')
